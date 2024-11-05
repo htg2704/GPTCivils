@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "632264443335",
+    "project_id": "civilsgpt",
+    "storage_bucket": "civilsgpt.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:632264443335:android:408032e1851ee291e805e2",
+        "android_client_info": {
+          "package_name": "com.civils.gpt.civils_gpt"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "632264443335-87k55c4hacrmaavr3u78m39e8miq39ed.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDopK3WjHc2MftAS7285rLl74-OI08roY4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "632264443335-87k55c4hacrmaavr3u78m39e8miq39ed.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "632264443335-0heu7j7t4b9d7fp9t93519u8insthp49.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "org.civils.gpt.civilsGpt"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:632264443335:android:c186974f85b23b5fe805e2",
+        "android_client_info": {
+          "package_name": "org.civils.gpt.civils_gpt"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "632264443335-87k55c4hacrmaavr3u78m39e8miq39ed.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDopK3WjHc2MftAS7285rLl74-OI08roY4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "632264443335-87k55c4hacrmaavr3u78m39e8miq39ed.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "632264443335-0heu7j7t4b9d7fp9t93519u8insthp49.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "org.civils.gpt.civilsGpt"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
