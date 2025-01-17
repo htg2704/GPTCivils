@@ -88,7 +88,7 @@ class _EvaluationPageState extends State<EvaluationPage> {
                                     ),
                                     ListTile(
                                       title: Text(
-                                        "Result: ${allDocs[index].result}",
+                                        Helper().parseAnswer(allDocs[index].result),
                                         style: TextStyle(
                                             color: Colors.grey.shade800,
                                             fontSize: 18),

@@ -310,11 +310,19 @@ class PDFService {
       fontSize: 10,
     );
 
-    response = response.replaceAll('```', '');
-    response = response.replaceAll('```', '');
-    int startIndex = response.indexOf('{');
-    int endIndex = response.lastIndexOf('}');
-    String jsonString = response.substring(startIndex, endIndex + 1);
+    final regex = RegExp(r'```(?:json)?\s*([\s\S]*?)```');
+
+    // Attempt to match the pattern
+    final match = regex.firstMatch(response);
+
+    // Extract the JSON-like content or use the response as-is
+    String jsonString;
+    if (match != null && match.groupCount > 0) {
+      jsonString = match.group(1)!.trim(); // Extract JSON between backticks
+    } else {
+      jsonString = response.trim(); // Use the whole string if no markers found
+    }
+
     Map<String, dynamic> data = jsonDecode(jsonString);
     print(data);
     List<dynamic>? evaluationData = data["evaluation"];
@@ -432,5 +440,25 @@ class LoadConstants {
         await FirebaseFirestore.instance.collection("constants").get();
     final constants = constantDocuments.docs[0].data();
     constantsProvider.updateConstants(constants);
+  }
+}
+
+class Helper{
+  String parseAnswer(String text){
+
+    try {
+    final regex = RegExp(r'```(?:json)?\s*([\s\S]*?)```');
+    final match = regex.firstMatch(text);
+    String jsonString;
+    if (match != null && match.groupCount > 0) {
+      jsonString = match.group(1)!.trim();
+    } else {
+      jsonString = text.trim();
+    }
+      final parsedJson = json.decode(jsonString);
+      return "Improvements: " + parsedJson['improvements'] + "\n Model Answer: " + parsedJson["model_answer"];
+    } catch (e) {
+      return "Error parsing the response";
+    }
   }
 }

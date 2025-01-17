@@ -61,8 +61,10 @@ class _DocumentPageState extends State<DocumentPage> {
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
         backgroundColor: AppConstants.primaryColour,
         appBar: AppBar(
@@ -290,17 +292,16 @@ class _DocumentPageState extends State<DocumentPage> {
                                   );
                                 },
                               );
-                            print("hello _ " + Provider.of<ConstantsProvider>(context, listen: false).values.toString());
                               var text = await PDFService(context: context)
                                   .extractText(filePath);
                               var openAi = await OpenAi().searchText(
                                   '${promptController.text} $text', context);
-                              var pdfResponse = await OpenAi().pdfGenerationText('${promptController.text} $text', context);
+                              // var pdfResponse = await OpenAi().pdfGenerationText('${promptController.text} $text', context);
                               DateTime now = DateTime.now();
                               String formattedTimestamp = "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_"
                                   "${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}";
                               String generatedFileName = "evaluation_matrix_$formattedTimestamp.pdf";
-                              await PDFService(context: context).generatePdf(pdfResponse, generatedFileName);
+                              await PDFService(context: context).generatePdf(openAi, generatedFileName);
                               updateDatabase();
                               Navigator.pop(progressContext);
                               var db = await SqlQuery().openDb();

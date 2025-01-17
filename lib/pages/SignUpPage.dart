@@ -16,10 +16,95 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>(); // Form key for validation
-
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  var loading = false;
+
+  void signUpWithEmailID(
+      String name,
+      String email,
+      String password,
+      BuildContext context,
+      ) async
+  {
+    setState(() {
+      loading = true;
+    });
+    try {
+      BuildContext tempContext = context;
+
+      showDialog(
+        context: tempContext,
+        builder: (tempContext) {
+         Future.delayed(Duration(seconds: 5), (){
+           Navigator.of(tempContext).pop();
+         });
+          return const AlertDialog(
+              content: Text('Hang On while we signup you up!!')
+          );
+        },
+      );
+      await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        await user.updateDisplayName(name);
+        await user.reload();
+        showDialog(
+          context: context,
+          builder: (_context) {
+            return AlertDialog(
+              content: const Text('User created Successfully'),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('OK'),
+                  onPressed: () {
+                    Navigator.of(_context).pop();
+
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
+                  },
+                ),
+              ],
+            );
+
+          },
+        );
+      } else {
+
+        Navigator.of(tempContext).pop();
+      }
+      setState(() {
+        loading = false;
+      });
+    } catch (e) {
+      // Show error message in dialog
+      print(e);
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Sign Up Failed'),
+            content: Text(e.toString()), // Display Firebase error message
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+      setState(() {
+        loading = false;
+      });
+    }
+  }
+
 
   @override
   void dispose() {
@@ -33,15 +118,6 @@ class _SignUpPageState extends State<SignUpPage> {
   // Validation method for sign-up form
   void _signUp(BuildContext context) {
     if (_formKey.currentState!.validate()) {
-      showCupertinoDialog(
-        context: context,
-        builder: (context) {
-          return const CupertinoAlertDialog(
-            title: Text('Hold tight while we sign you up'),
-            content: CupertinoActivityIndicator(),
-          );
-        },
-      );
       signUpWithEmailID(
         nameController.text,
         emailController.text,
@@ -168,7 +244,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   margin: const EdgeInsets.symmetric(horizontal: 10),
                   child: ElevatedButton(
                     onPressed: () {
-                      _signUp(context);
+                      if(loading == false) {
+                        _signUp(context);
+                      }
                     },
                     // Call the validation and sign-up method
                     style: ElevatedButton.styleFrom(
@@ -178,7 +256,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         borderRadius: BorderRadius.circular(40),
                       ),
                     ),
-                    child: const Text(
+                    child: loading ? const Center(child: CupertinoActivityIndicator(color: Colors.white,)) : const Text(
                       'Sign Up',
                       style: TextStyle(fontSize: 20, color: Colors.white),
                     ),
@@ -193,59 +271,4 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 }
 
-void signUpWithEmailID(
-  String name,
-  String email,
-  String password,
-  BuildContext context,
-) async {
-  try {
-    await FirebaseAuth.instance
-        .createUserWithEmailAndPassword(email: email, password: password);
-    User? user = FirebaseAuth.instance.currentUser;
 
-    if (user != null) {
-      user.updateDisplayName(name);
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            content: const Text('User created Successfully'),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () {
-                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
-                },
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      print("User not created");
-      Navigator.of(context).pop();
-    }
-  } catch (e) {
-    // Show error message in dialog
-    print(e);
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Sign Up Failed'),
-          content: Text(e.toString()), // Display Firebase error message
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-}

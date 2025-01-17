@@ -1,18 +1,12 @@
 import 'package:civils_gpt/pages/HomePage.dart';
 import 'package:civils_gpt/pages/LoginPage.dart';
 import 'package:civils_gpt/pages/SplashScreen.dart';
-import 'package:civils_gpt/providers/ConstantsProvider.dart';
-import 'package:civils_gpt/providers/PremiumProvider.dart';
-import 'package:dart_openai/dart_openai.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-
 import 'firebase_options.dart';
 
 Future<void> main() async {

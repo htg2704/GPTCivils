@@ -1,6 +1,5 @@
 import 'package:civils_gpt/constants/AppConstants.dart';
 import 'package:civils_gpt/main.dart';
-import 'package:civils_gpt/pages/LoginPage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

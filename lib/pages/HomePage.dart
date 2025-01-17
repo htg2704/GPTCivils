@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    Future.delayed(const Duration(milliseconds: 10), () {
+    Future.delayed(const Duration(milliseconds: 30), () {
       LoginHelper().checkPremiumStatus(
           Provider.of<PremiumProvider>(context, listen: false));
     });

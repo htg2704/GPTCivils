@@ -11,8 +11,9 @@ class OpenAi {
     final constants =
         Provider.of<ConstantsProvider>(context, listen: false).values;
     final open_ai_key = constants['openAIKey']!;
-    final prompt = constants['evaluationPrompt']!;
-    final combinedText = '$prompt$text'; // Combine the prompt with the input text
+    final prompt = constants['evaluationSuperPrompt']!;
+    print(prompt);
+    final combinedText = '$prompt $text'; // Combine the prompt with the input text
     try {
       Response response = await post(Uri.parse(constants['openAIBaseUrl']),
           headers: <String, String>{
@@ -33,9 +34,8 @@ class OpenAi {
       } else {
         return "Error while Processing Request";
       }
-    } on RequestFailedException catch (e) {
-      print(e.message);
-      print(e.statusCode);
+    } catch (e) {
+      print('Unhandled exception: $e');
     }
     return 'Error';
   }

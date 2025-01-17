@@ -1,18 +1,13 @@
-import 'dart:io';
-
 import 'package:civils_gpt/pages/SignUpPage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/AppConstants.dart';
-import '../providers/PremiumProvider.dart';
-import '../services/helper.dart';
 import 'HomePage.dart';
 
 class LoginPage extends StatefulWidget {
@@ -187,22 +182,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             const SizedBox(height: 10),
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.center,
-            //   children: [
-            //     IconButton.outlined(
-            //       onPressed: () {
-            //         signInWithGoogle(context);
-            //       },
-            //       icon: Image.asset(
-            //         "assets/images/google.png",
-            //         width: 30,
-            //         height: 30,
-            //         fit: BoxFit.cover,
-            //       ),
-            //     ),
-            //   ],
-            // )
+
           ],
         ),
       ),
@@ -212,7 +192,6 @@ class _LoginPageState extends State<LoginPage> {
 
 void signInWithGoogle(BuildContext context) async {
   GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-  print(googleUser?.email);
   GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
   try {
     AuthCredential credential = GoogleAuthProvider.credential(
@@ -240,7 +219,6 @@ void signInWithGoogle(BuildContext context) async {
 }
 
 void signInWithEmail(String email, String password, BuildContext context) async {
-  // Show the loading dialog
   BuildContext _context = context;
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(content: Text('Signing In .....'), duration: Duration(seconds: 1),),
@@ -252,12 +230,10 @@ void signInWithEmail(String email, String password, BuildContext context) async 
       password: password,
     );
 
-    // Dismiss the dialog upon success
     if (Navigator.canPop(_context)) Navigator.pop(_context);
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
   } on FirebaseAuthException catch (e) {
     print(e);
-    // Dismiss the dialog and show error message for invalid credentials
     if (Navigator.canPop(_context)) Navigator.pop(_context);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Invalid Email or Password')),
