@@ -107,6 +107,7 @@ class _EvaluationPageState extends State<EvaluationPage> {
                             allDocs[index].date),
                       );
                     },
+            reverse: true,
                     itemCount: allDocs.length),
       ),
     );
@@ -115,7 +116,6 @@ class _EvaluationPageState extends State<EvaluationPage> {
   void getData() async {
     Database database = await SqlQuery().openDb();
     List<DocModel> allDocs = await SqlQuery().getDocs(database);
-    print(allDocs.length);
     setState(() {
       for (var doc in allDocs) {
         this.allDocs.add(doc);

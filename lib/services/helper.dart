@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf_render/pdf_render.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../providers/ConstantsProvider.dart';
 import '../providers/PremiumProvider.dart';
 
@@ -61,7 +62,8 @@ class LoginHelper {
 
 class PaymentHelper {
   final db = FirebaseFirestore.instance;
-
+  Map<String, dynamic>? plan;
+  String? code;
   Future<int> checkDiscountCode(String code, String planID) async {
     final discountCodesCollection = db.collection("discount_codes");
     final discountCodes =
@@ -75,6 +77,83 @@ class PaymentHelper {
     } else {
       return 0;
     }
+  }
+
+  Future<void> razorPayCall(int value) async {
+    final _razorpay = Razorpay();
+    final constants = await db.collection("constants").get();
+    var options = {
+      'key': constants.docs[0].data()["razorpay_key"],
+      'amount': value * 100,
+      'name': 'CivilsGPT',
+      'description': 'CivilsGPT subscription',
+    };
+
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+
+    _razorpay.open(options);
+
+
+  }
+
+  Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    final user = FirebaseAuth.instance.currentUser;
+    DateTime currentTimestamp = DateTime.now();
+    int x = plan!["days"];
+    DateTime newTimestamp = currentTimestamp.add(Duration(days: x));
+    final userDoc = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(user!.uid)
+        .get();
+
+    final userData = userDoc.data()!;
+    if (code!.isNotEmpty && userData.containsKey("history")) {
+      if (userData["history"].containsKey(code)) {
+        Map<String, dynamic> history = userData["history"];
+
+        history[code!] = history[code]! + 1;
+        await FirebaseFirestore.instance
+            .collection("users")
+            .doc(user.uid)
+            .update(<String, dynamic>{"history": history});
+      } else if (code!.isNotEmpty) {
+        await FirebaseFirestore.instance
+            .collection("users")
+            .doc(user.uid)
+            .update(<String, dynamic>{
+          "history": {code: 1}
+        });
+      }
+    }
+    else if (code!.isNotEmpty) {
+      await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user.uid)
+          .update(<String, dynamic>{
+        "history": {code: 1}
+      });
+    }
+    await FirebaseFirestore.instance
+        .collection("users")
+        .doc(user.uid)
+        .update(<String, dynamic>{
+      "planID": plan!["planID"],
+      "premiumUser": newTimestamp.toString(),
+    });
+    await FirebaseFirestore.instance.collection("payments").doc().set({
+      "paymentID": response.paymentId,
+      "userID": user.uid
+    });
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    print(response.toString());
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    print(response.toString());
   }
 
   Future<bool> finalCheckout(String code) async {
@@ -105,54 +184,13 @@ class PaymentHelper {
 
   Future<bool> doPayment(int value, PremiumProvider premiumProvider,
       Map<String, dynamic> plan, String code) async {
+    this.plan = plan;
+    this.code = code;
     bool finalCheck = await finalCheckout(code);
     if (!finalCheck) {
       return false;
     }
-
-    final user = FirebaseAuth.instance.currentUser;
-    DateTime currentTimestamp = DateTime.now();
-    int x = plan["days"];
-    DateTime newTimestamp = currentTimestamp.add(Duration(days: x));
-    final userDoc = await FirebaseFirestore.instance
-        .collection("users")
-        .doc(user!.uid)
-        .get();
-
-    final userData = userDoc.data()!;
-    if (code.isNotEmpty && userData.containsKey("history")) {
-      if (userData["history"].containsKey(code)) {
-        Map<String, dynamic> history = userData["history"];
-
-        history[code] = history[code]! + 1;
-        await FirebaseFirestore.instance
-            .collection("users")
-            .doc(user!.uid)
-            .update(<String, dynamic>{"history": history});
-      } else if (code.isNotEmpty) {
-        await FirebaseFirestore.instance
-            .collection("users")
-            .doc(user!.uid)
-            .update(<String, dynamic>{
-          "history": {code: 1}
-        });
-      }
-    }
-    else if (code.isNotEmpty) {
-      await FirebaseFirestore.instance
-          .collection("users")
-          .doc(user!.uid)
-          .update(<String, dynamic>{
-        "history": {code: 1}
-      });
-    }
-    await FirebaseFirestore.instance
-        .collection("users")
-        .doc(user!.uid)
-        .update(<String, dynamic>{
-      "planID": plan["planID"],
-      "premiumUser": newTimestamp.toString()
-    });
+    await razorPayCall(value);
     return true;
   }
 }
@@ -324,7 +362,6 @@ class PDFService {
     }
 
     Map<String, dynamic> data = jsonDecode(jsonString);
-    print(data);
     List<dynamic>? evaluationData = data["evaluation"];
     String evaluationQuestion = data["question"]??"";
     int maxLen = 0;
