@@ -1,5 +1,4 @@
 import 'package:civils_gpt/providers/PremiumProvider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -314,7 +313,6 @@ class CartPageState extends State<CartPage> {
                         value,
                         widget.data,
                         couponCodeController.text.toUpperCase().trim());
-                    print(status);
                     if (status == true) {
                       Future.delayed(const Duration(milliseconds: 500), () {
                         Navigator.of(context).pop(); // Pop the CartPage

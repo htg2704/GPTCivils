@@ -133,7 +133,33 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 25),
+            const SizedBox(height: 15),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton.outlined(
+                  onPressed: () {
+                    signInWithGoogle(context);
+                  },
+                  icon: Image.asset(
+                    "assets/images/google.png",
+                    width: 30,
+                    height: 30,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                // const SizedBox(width: 20),
+                // IconButton.outlined(
+                //     onPressed: () {
+                //       // signInwithPhone();
+                //     },
+                //     icon: const Icon(
+                //       Icons.phone,
+                //       size: 30,
+                //     )),
+              ],
+            ),
+            const SizedBox(height: 10),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
               child: ElevatedButton(
@@ -173,6 +199,33 @@ class _LoginPageState extends State<LoginPage> {
                     )),
               ],
             ),
+            const SizedBox(
+              height: 10,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                    onTap: () async {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Sending password reset mail.')),
+                      );
+                    try{
+                      await FirebaseAuth.instance.sendPasswordResetEmail(email: emailController.text.toString());
+                    }catch(e){
+                      print(e);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Could not send the password reset mail, please check the email')),
+                      );
+                    }
+                    },
+                    child: const Text(
+                      'Forget Password',
+                      style: TextStyle(
+                          color: Colors.blue, fontWeight: FontWeight.w400, fontSize: 12),
+                    )),
+              ],
+            ),
             const SizedBox(height: 20),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 35),
@@ -191,6 +244,7 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 void signInWithGoogle(BuildContext context) async {
+
   GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
   GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
   try {
@@ -198,20 +252,13 @@ void signInWithGoogle(BuildContext context) async {
       accessToken: googleAuth?.accessToken,
       idToken: googleAuth?.idToken,
     );
-
-    showCupertinoDialog(
-      context: context,
-      builder: (context) {
-        return const CupertinoAlertDialog(
-          title: Text('Signing in'),
-          content: CupertinoActivityIndicator(),
-        );
-      },
+    ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Signing in')),
     );
     await FirebaseAuth.instance
         .signInWithCredential(credential)
         .whenComplete(() {
-      Navigator.pop(context);
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
     });
   } catch (e) {
     print(e);

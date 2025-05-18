@@ -3,6 +3,7 @@ import 'package:civils_gpt/pages/ChoosePlans.dart';
 import 'package:civils_gpt/pages/EvaluationPage.dart';
 import 'package:civils_gpt/pages/LoginPage.dart';
 import 'package:civils_gpt/pages/NotesPage.dart';
+import 'package:civils_gpt/pages/PrelimsFlash.dart';
 import 'package:civils_gpt/pages/QuestionsPage.dart';
 import 'package:civils_gpt/providers/ConstantsProvider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -506,11 +507,11 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
-                            // Navigator.push(
-                            //     context,
-                            //     MaterialPageRoute(
-                            //       builder: (context) => NotesPage(),
-                            //     ));
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PrelimsFlashPage(),
+                                ));
                           },
                           child: Container(
                             decoration: BoxDecoration(
