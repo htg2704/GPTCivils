@@ -281,7 +281,7 @@ class _DocumentPageState extends State<DocumentPage> {
                           backgroundColor: AppConstants.secondaryColour,
                           onPressed: () async {
                             if (filePath != '' &&
-                                (value.premium || value.counter > 0)) {
+                                (value.premium != "NO" || value.counter > 0)) {
                               BuildContext progressContext = context;
                               showCupertinoDialog(
                                 context: context,
@@ -327,14 +327,14 @@ class _DocumentPageState extends State<DocumentPage> {
                               });
                               getData();
                               Navigator.of(context).push(MaterialPageRoute(builder: (_)=> const EvaluationPage()));
-                            } else if (!(value.premium ||
+                            } else if (!(value.premium != "NO" ||
                                 snapshot.data!.data()!["freeEvaluations"] >
                                     0)) {
                               Navigator.of(context).pop();
                             }
                           },
                           label: Text(
-                            (value.premium ||
+                            (value.premium != "NO" ||
                                     snapshot.data!.data()!["freeEvaluations"] >
                                         0)
                                 ? 'Proceed'

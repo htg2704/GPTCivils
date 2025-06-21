@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class PremiumProvider extends ChangeNotifier {
-  bool premium = false;
+  String premium = "false";
   int counter = 0;
   String planID = "-1";
 
@@ -15,7 +15,7 @@ class PremiumProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void changePremium(bool status, String planID) {
+  void changePremium(String status, String planID) {
     this.premium = status;
     this.planID = planID;
     notifyListeners();

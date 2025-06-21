@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -44,7 +45,7 @@ class LoginHelper {
         if (DateTime.now().millisecondsSinceEpoch <
             DateTime.parse(userDoc.data()!["premiumUser"])
                 .millisecondsSinceEpoch) {
-          premiumProvider.changePremium(true, userDoc.data()!["planID"]);
+          premiumProvider.changePremium(DateTime.parse(userDoc.data()!["premiumUser"]).toString(), userDoc.data()!["planID"]);
         } else {
           FirebaseFirestore.instance
               .collection("users")
@@ -64,6 +65,7 @@ class PaymentHelper {
   final db = FirebaseFirestore.instance;
   Map<String, dynamic>? plan;
   String? code;
+  Completer<bool>? _paymentCompleter;
   Future<int> checkDiscountCode(String code, String planID) async {
     final discountCodesCollection = db.collection("discount_codes");
     final discountCodes =
@@ -82,6 +84,7 @@ class PaymentHelper {
   Future<void> razorPayCall(int value) async {
     final _razorpay = Razorpay();
     final constants = await db.collection("constants").get();
+
     var options = {
       'key': constants.docs[0].data()["razorpay_key"],
       'amount': value * 100,
@@ -94,67 +97,72 @@ class PaymentHelper {
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
 
     _razorpay.open(options);
-
-
   }
 
+
   Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    final user = FirebaseAuth.instance.currentUser;
-    DateTime currentTimestamp = DateTime.now();
-    int x = plan!["days"];
-    DateTime newTimestamp = currentTimestamp.add(Duration(days: x));
-    final userDoc = await FirebaseFirestore.instance
-        .collection("users")
-        .doc(user!.uid)
-        .get();
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      DateTime currentTimestamp = DateTime.now();
+      int x = plan!["days"];
+      DateTime newTimestamp = currentTimestamp.add(Duration(days: x));
 
-    final userData = userDoc.data()!;
-    if (code!.isNotEmpty && userData.containsKey("history")) {
-      if (userData["history"].containsKey(code)) {
-        Map<String, dynamic> history = userData["history"];
+      final userDoc = await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user!.uid)
+          .get();
 
-        history[code!] = history[code]! + 1;
-        await FirebaseFirestore.instance
-            .collection("users")
-            .doc(user.uid)
-            .update(<String, dynamic>{"history": history});
+      final userData = userDoc.data()!;
+      if (code!.isNotEmpty && userData.containsKey("history")) {
+        if (userData["history"].containsKey(code)) {
+          Map<String, dynamic> history = userData["history"];
+          history[code!] = history[code]! + 1;
+          await FirebaseFirestore.instance
+              .collection("users")
+              .doc(user.uid)
+              .update({"history": history});
+        } else {
+          await FirebaseFirestore.instance
+              .collection("users")
+              .doc(user.uid)
+              .update({"history": {code: 1}});
+        }
       } else if (code!.isNotEmpty) {
         await FirebaseFirestore.instance
             .collection("users")
             .doc(user.uid)
-            .update(<String, dynamic>{
-          "history": {code: 1}
-        });
+            .update({"history": {code: 1}});
       }
-    }
-    else if (code!.isNotEmpty) {
+
       await FirebaseFirestore.instance
           .collection("users")
           .doc(user.uid)
-          .update(<String, dynamic>{
-        "history": {code: 1}
+          .update({
+        "planID": plan!["planID"],
+        "premiumUser": newTimestamp.toString(),
       });
+
+      await FirebaseFirestore.instance.collection("payments").doc().set({
+        "paymentID": response.paymentId,
+        "userID": user.uid,
+      });
+
+      _paymentCompleter?.complete(true); // ✅ Complete with success
+    } catch (e) {
+      _paymentCompleter?.complete(false); // Optional fallback
     }
-    await FirebaseFirestore.instance
-        .collection("users")
-        .doc(user.uid)
-        .update(<String, dynamic>{
-      "planID": plan!["planID"],
-      "premiumUser": newTimestamp.toString(),
-    });
-    await FirebaseFirestore.instance.collection("payments").doc().set({
-      "paymentID": response.paymentId,
-      "userID": user.uid
-    });
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
     print(response.toString());
+    _paymentCompleter?.complete(false); // ✅ Complete with failure
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
     print(response.toString());
+    _paymentCompleter?.complete(false);
   }
+
 
   Future<bool> finalCheckout(String code) async {
     if (code.isEmpty) {
@@ -190,8 +198,9 @@ class PaymentHelper {
     if (!finalCheck) {
       return false;
     }
+    _paymentCompleter = Completer<bool>();
     await razorPayCall(value);
-    return true;
+    return _paymentCompleter!.future;
   }
 }
 

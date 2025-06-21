@@ -314,10 +314,10 @@ class CartPageState extends State<CartPage> {
                         widget.data,
                         couponCodeController.text.toUpperCase().trim());
                     if (status == true) {
+                      value.changePremium(DateTime.now().toString(), widget.data["planID"]);
                       Future.delayed(const Duration(milliseconds: 500), () {
                         Navigator.of(context).pop(); // Pop the CartPage
                       });
-                      value.changePremium(true, widget.data["planID"]);
                     } else {
                       couponCodeController.clear();
                     }

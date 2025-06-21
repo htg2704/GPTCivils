@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/AppConstants.dart';
 import 'HomePage.dart';
 
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -20,14 +21,8 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final phoneController = TextEditingController();
-  final otpController = TextEditingController();
   bool firstTimeLogin = true;
   late SharedPreferences sharedPreferences;
-
-  void popDialog() {
-    Navigator.of(context).pop(); // Function to pop the dialog programmatically
-  }
 
   @override
   void initState() {
@@ -35,7 +30,7 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         sharedPreferences = value;
         firstTimeLogin = (value.getBool("firstTime") ?? true);
-        if (firstTimeLogin == true) {
+        if (firstTimeLogin) {
           value.setBool("firstTime", false);
         }
       });
@@ -43,257 +38,178 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: true, // ensures content adjusts when keyboard opens
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE0F7FA), Color(0xFFFFFFFF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              alignment: Alignment.topLeft,
-              child: Text(
-                'Lets Sign you in!',
-                style: TextStyle(
-                    fontSize: 35,
-                    fontWeight: FontWeight.w700,
-                    color: AppConstants.secondaryColour),
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              alignment: Alignment.topLeft,
-              child: Text(
-                !firstTimeLogin
-                    ? 'Welcome back,\nYou have been missed!'
-                    : 'Your path to civil service\n success begins now!',
-                style: TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade700),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20, top: 50),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(40),
-                  border: Border.all(color: Colors.black, width: 2),
-                ),
-                margin: const EdgeInsets.symmetric(horizontal: 10),
-                alignment: Alignment.topLeft,
-                child: TextField(
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    icon: Icon(
-                      Icons.email,
-                    ),
-                    alignLabelWithHint: true,
-                    hintText: 'Email',
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(40),
-                  border: Border.all(color: Colors.black, width: 2),
-                ),
-                margin: const EdgeInsets.symmetric(horizontal: 10),
-                alignment: Alignment.topLeft,
-                child: TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    icon: Icon(
-                      Icons.password,
-                    ),
-                    alignLabelWithHint: true,
-                    hintText: 'Password',
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton.outlined(
-                  onPressed: () {
-                    signInWithGoogle(context);
-                  },
-                  icon: Image.asset(
-                    "assets/images/google.png",
-                    width: 30,
-                    height: 30,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                // const SizedBox(width: 20),
-                // IconButton.outlined(
-                //     onPressed: () {
-                //       // signInwithPhone();
-                //     },
-                //     icon: const Icon(
-                //       Icons.phone,
-                //       size: 30,
-                //     )),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-              child: ElevatedButton(
-                  onPressed: () {
-                    signInWithEmail(
-                        emailController.text, passwordController.text, context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(40),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 40),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Let\'s Sign you in!',
+                            style: TextStyle(
+                              fontSize: 35,
+                              fontWeight: FontWeight.w700,
+                              color: AppConstants.secondaryColour,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            !firstTimeLogin
+                                ? 'Welcome back,\nYou have been missed!'
+                                : 'Your path to civil service\nsuccess begins now!',
+                            style: TextStyle(
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade700,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+                          _buildTextField(emailController, 'Email', Icons.email),
+                          const SizedBox(height: 20),
+                          _buildTextField(passwordController, 'Password', Icons.lock,
+                              obscureText: true),
+                          const SizedBox(height: 30),
+                          ElevatedButton(
+                            onPressed: () {
+                              signInWithEmail(
+                                  emailController.text,
+                                  passwordController.text,
+                                  context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(40),
+                              ),
+                              elevation: 5,
+                            ),
+                            child: const Text(
+                              'Sign In',
+                              style: TextStyle(fontSize: 20, color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Don\'t have an account? '),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                          const SignUpPage()));
+                                },
+                                child: const Text(
+                                  'Sign Up',
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 30),
+                          Divider(
+                            color: Colors.grey.shade600,
+                            thickness: 1,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: const Text('Sign In',
-                      style: TextStyle(fontSize: 20, color: Colors.white))),
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Don\'t have an account? '),
-                GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SignUpPage(),
-                          ));
-                    },
-                    child: const Text(
-                      'Sign Up',
-                      style: TextStyle(
-                          color: Colors.blue, fontWeight: FontWeight.w600),
-                    )),
-              ],
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                    onTap: () async {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Sending password reset mail.')),
-                      );
-                    try{
-                      await FirebaseAuth.instance.sendPasswordResetEmail(email: emailController.text.toString());
-                    }catch(e){
-                      print(e);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Could not send the password reset mail, please check the email')),
-                      );
-                    }
-                    },
-                    child: const Text(
-                      'Forget Password',
-                      style: TextStyle(
-                          color: Colors.blue, fontWeight: FontWeight.w400, fontSize: 12),
-                    )),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 35),
-              child: Divider(
-                color: Colors.grey.shade600,
-                height: 2,
-              ),
-            ),
-            const SizedBox(height: 10),
-
-          ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
   }
-}
 
-void signInWithGoogle(BuildContext context) async {
-
-  GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-  GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
-  try {
-    AuthCredential credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth?.accessToken,
-      idToken: googleAuth?.idToken,
+  Widget _buildTextField(TextEditingController controller, String hint,
+      IconData icon, {bool obscureText = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: Colors.grey.shade300, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: hint == 'Email'
+            ? TextInputType.emailAddress
+            : TextInputType.text,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          icon: Icon(icon, color: Colors.grey.shade600),
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade400),
+        ),
+      ),
     );
-    ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Signing in')),
-    );
-    await FirebaseAuth.instance
-        .signInWithCredential(credential)
-        .whenComplete(() {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
-    });
-  } catch (e) {
-    print(e);
   }
 }
 
 void signInWithEmail(String email, String password, BuildContext context) async {
-  BuildContext _context = context;
   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Signing In .....'), duration: Duration(seconds: 1),),
+    const SnackBar(
+      content: Text('Signing In .....'),
+      duration: Duration(seconds: 1),
+    ),
   );
   try {
-    // Attempt sign-in
     await FirebaseAuth.instance.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
-
-    if (Navigator.canPop(_context)) Navigator.pop(_context);
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+    Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomePage()));
   } on FirebaseAuthException catch (e) {
-    print(e);
-    if (Navigator.canPop(_context)) Navigator.pop(_context);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Invalid Email or Password')),
     );
-
-  } catch (e) {
     print(e);
-    // Dismiss the dialog and show error message for other errors
-    if (Navigator.canPop(_context)) Navigator.pop(_context);
+  } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(e.toString())),
     );
     print(e);
   }
 }
-
