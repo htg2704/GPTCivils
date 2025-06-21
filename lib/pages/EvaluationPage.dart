@@ -46,8 +46,7 @@ class _EvaluationPageState extends State<EvaluationPage>
           "Completed Evaluations",
           style: GoogleFonts.poppins(
             fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+            fontWeight: FontWeight.w600
           ),
         ),
       ),
@@ -135,56 +134,58 @@ class _EvaluationPageState extends State<EvaluationPage>
       builder: (_) {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 70,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade400,
-                  borderRadius: BorderRadius.circular(2),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 70,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                doc.fileName,
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 16),
+                Text(
+                  doc.fileName,
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Text(
-                    "Download Matrix:",
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Text(
+                      "Download Matrix:",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.get_app),
-                    color: AppConstants.primaryColour,
-                    onPressed: () {
-                      PDFService(context: context)
-                          .shareSavedPdf(doc.pdfName);
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                Helper().parseAnswer(doc.result),
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  color: Colors.grey.shade800,
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.get_app),
+                      color: AppConstants.pdfIconColor,
+                      onPressed: () {
+                        PDFService(context: context)
+                            .shareSavedPdf(doc.pdfName);
+                      },
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  Helper().parseAnswer(doc.result),
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         );
       },

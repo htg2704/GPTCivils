@@ -11,9 +11,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
-
+import 'package:sqflite/sqflite.dart';
+import 'package:intl/intl.dart';
 import '../constants/AppConstants.dart';
+import '../models/docModel.dart';
 import '../providers/PremiumProvider.dart';
+import '../services/SqlQuery.dart';
 import '../services/helper.dart';
 import 'DocumentPage.dart';
 
@@ -35,10 +38,49 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   final Color cardColor = const Color(0xFFF6F7FB);    // Light grey/purple for cards
   final Color accentColor = const Color(0xFFFF781F);   // Vivid Orange accent
   final Color textColor = Colors.black87;
+  int? docCount = 0;
+  int? todayAnswerStreak = 0;
+  void getData() async {
+    Database database = await SqlQuery().openDb();
+    List<DocModel> allDocs = await SqlQuery().getDocs(database);
+
+    String _convertToIsoDate(String dateStr) {
+      final parts = dateStr.split('/');
+      final day = parts[0].padLeft(2, '0');
+      final month = parts[1].padLeft(2, '0');
+      final year = parts[2];
+      return "$year-$month-$day";
+    }
+
+    bool checkDateMatch(String inputDateStr) {
+      final inputDate = DateTime.parse(
+        _convertToIsoDate(inputDateStr),
+      );
+
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      if(inputDate == today){
+        return true;
+      }else{
+        return false;
+      }
+    }
+    int tempAnswerStreak = 0;
+    allDocs.forEach((doc) {
+        if(checkDateMatch(doc.date)){
+            tempAnswerStreak = tempAnswerStreak + 1;
+        }
+    });
+    setState(() {
+      docCount = allDocs.length;
+      todayAnswerStreak = tempAnswerStreak;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    getData();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -307,12 +349,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                             children: [
                               _buildStatsCard(
                                 title: "ANSWERS WRITTEN",
-                                value: "0",
+                                value: docCount.toString(),
                                 icon: Icons.edit,
                               ),
                               _buildStatsCard(
                                 title: "ANSWER DAILY STREAK",
-                                value: "0",
+                                value: todayAnswerStreak.toString(),
                                 icon: Icons.whatshot,
                               ),
                             ],
@@ -323,12 +365,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                             children: [
                               _buildStatsCard(
                                 title: "PRELIMS TEST ATTEMPTED",
-                                value: "1",
+                                value: "0",
                                 icon: Icons.assignment_outlined,
                               ),
                               _buildStatsCard(
                                 title: "PREMIUM VALIDITY LEFT",
-                                value: "30 Days",
+                                value: context.read<PremiumProvider>().premium  == "NO" ? "NO" : DateFormat('yyyy-MM-dd').format(DateTime.parse(context.read<PremiumProvider>().premium)),
                                 icon: Icons.calendar_today,
                               ),
                             ],
@@ -487,7 +529,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 Text(
                   value,
                   style: GoogleFonts.poppins(
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: textColor,
                   ),

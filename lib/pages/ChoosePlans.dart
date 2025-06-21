@@ -47,7 +47,7 @@ class ChoosePlansState extends State<ChoosePlans> {
                       height: 50,
                       child: Center(
                         child: Text(
-                          value.premium ? "Current Plan" : "Choose Your Plan",
+                          value.premium != "NO" ? "Current Plan" : "Choose Your Plan",
                           style: GoogleFonts.roboto(
                               fontSize: 32, fontWeight: FontWeight.w900),
                         ),
@@ -66,16 +66,16 @@ class ChoosePlansState extends State<ChoosePlans> {
                         return ListView.builder(
                             itemCount: data.data!.size,
                             itemBuilder: (BuildContext context, int index) {
-                              if ((value.premium &&
+                              if ((value.premium != "NO" &&
                                       data.data!.docs[index].data()['planID'] ==
                                           value.planID) ||
-                                  !value.premium) {
+                                  !(value.premium != "NO")) {
                                 return Padding(
                                   padding: const EdgeInsets.only(
                                       top: 12, bottom: 12),
                                   child: GestureDetector(
                                     onTap: () {
-                                      if (!value.premium) {
+                                      if (!(value.premium != "NO")) {
                                         if (selectedPlan != index) {
                                           setState(() {
                                             selectedPlan = index;
@@ -237,7 +237,7 @@ class ChoosePlansState extends State<ChoosePlans> {
                       }
                     }),
               ),
-              if (!value.premium)
+              if (!(value.premium != "NO"))
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
