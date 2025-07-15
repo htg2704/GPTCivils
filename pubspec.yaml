@@ -62,7 +62,7 @@ dev_dependencies:
   open_file: ^3.2.1
   font_awesome_flutter: ^10.7.0
   google_fonts: ^6.2.1
-  dotted_border: ^2.1.0
+  dotted_border: ^3.1.0
   shared_preferences: ^2.3.2
   email_validator: ^3.0.0
   dio: ^5.7.0
@@ -73,6 +73,7 @@ dev_dependencies:
   printing: ^5.13.3
   url_launcher: ^6.3.1
   csv: ^6.0.0
+  pdfx: ^2.5.0
   intl:
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

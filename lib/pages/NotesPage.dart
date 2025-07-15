@@ -118,11 +118,12 @@ class _NotesPageState extends State<NotesPage> {
                             ),
                           ),
                           DottedBorder(
-                            dashPattern: const [6, 3, 6, 3],
-                            borderType: BorderType.RRect,
-                            strokeWidth: 2,
-                            color: AppConstants.secondaryColour,
-                            radius: const Radius.circular(20),
+                            options: RoundedRectDottedBorderOptions(
+                              dashPattern: const [6, 3, 6, 3],
+                              strokeWidth: 2,
+                              color: AppConstants.secondaryColour,
+                              radius: const Radius.circular(20),
+                            ),
                             child: Container(
                               height: 126,
                               decoration: BoxDecoration(

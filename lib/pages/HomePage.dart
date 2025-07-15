@@ -370,7 +370,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               ),
                               _buildStatsCard(
                                 title: "PREMIUM VALIDITY LEFT",
-                                value: context.read<PremiumProvider>().premium  == "NO" ? "NO" : DateFormat('yyyy-MM-dd').format(DateTime.parse(context.read<PremiumProvider>().premium)),
+                                value: _getFormattedPremiumDate(context.read<PremiumProvider>().premium),
                                 icon: Icons.calendar_today,
                               ),
                             ],
@@ -389,7 +389,15 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       ),
     );
   }
-
+  String _getFormattedPremiumDate(String? premium) {
+    if (premium == null || premium == "NO") return "NO";
+    try {
+      final parsedDate = DateTime.parse(premium);
+      return DateFormat('yyyy-MM-dd').format(parsedDate);
+    } catch (e) {
+      return "Not Applicable";
+    }
+  }
   // Service Items in a Grid format (compact horizontal cards)
   Widget _buildServiceItems(BuildContext context) {
     return Padding(

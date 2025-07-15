@@ -69,7 +69,7 @@ class PaymentHelper {
   Future<int> checkDiscountCode(String code, String planID) async {
     final discountCodesCollection = db.collection("discount_codes");
     final discountCodes =
-        await discountCodesCollection.where('code', isEqualTo: code).get();
+    await discountCodesCollection.where('code', isEqualTo: code).get();
     if (discountCodes.size == 1) {
       if (discountCodes.docs[0].data()["planIDs"].contains(planID)) {
         return discountCodes.docs[0].data()['discount'];
@@ -172,7 +172,7 @@ class PaymentHelper {
     final document = await db.collection("users").doc(userID).get();
     final discountCodesCollection = db.collection("discount_codes");
     final discountCodes =
-        await discountCodesCollection.where('code', isEqualTo: code).get();
+    await discountCodesCollection.where('code', isEqualTo: code).get();
     int maxUses = discountCodes.docs[0].data()['maxUse'];
     final userData = document.data()!;
     final history = userData["history"];
@@ -410,26 +410,26 @@ class PDFService {
     }).toList();
 
     rows = [
-          pw.TableRow(
-            children: [
-              pw.Padding(
-                  padding: const pw.EdgeInsets.all(5),
-                  child: pw.Text('Sr No.', style: headerStyle)),
-              pw.Padding(
-                  padding: const pw.EdgeInsets.all(5),
-                  child: pw.Text('Criteria', style: headerStyle)),
-              pw.Padding(
-                  padding: const pw.EdgeInsets.all(5),
-                  child: pw.Text('Maximum Marks', style: headerStyle)),
-              pw.Padding(
-                  padding: const pw.EdgeInsets.all(5),
-                  child: pw.Text('Marks Obtained', style: headerStyle)),
-              pw.Padding(
-                  padding: const pw.EdgeInsets.all(5),
-                  child: pw.Text('Comments', style: headerStyle)),
-            ],
-          )
-        ] +
+      pw.TableRow(
+        children: [
+          pw.Padding(
+              padding: const pw.EdgeInsets.all(5),
+              child: pw.Text('Sr No.', style: headerStyle)),
+          pw.Padding(
+              padding: const pw.EdgeInsets.all(5),
+              child: pw.Text('Criteria', style: headerStyle)),
+          pw.Padding(
+              padding: const pw.EdgeInsets.all(5),
+              child: pw.Text('Maximum Marks', style: headerStyle)),
+          pw.Padding(
+              padding: const pw.EdgeInsets.all(5),
+              child: pw.Text('Marks Obtained', style: headerStyle)),
+          pw.Padding(
+              padding: const pw.EdgeInsets.all(5),
+              child: pw.Text('Comments', style: headerStyle)),
+        ],
+      )
+    ] +
         rows;
 
     pdf.addPage(
@@ -483,7 +483,7 @@ class PDFService {
 class LoadConstants {
   void loadConstantsFromFirebase(ConstantsProvider constantsProvider) async {
     final constantDocuments =
-        await FirebaseFirestore.instance.collection("constants").get();
+    await FirebaseFirestore.instance.collection("constants").get();
     final constants = constantDocuments.docs[0].data();
     constantsProvider.updateConstants(constants);
   }
@@ -493,14 +493,14 @@ class Helper{
   String parseAnswer(String text){
 
     try {
-    final regex = RegExp(r'```(?:json)?\s*([\s\S]*?)```');
-    final match = regex.firstMatch(text);
-    String jsonString;
-    if (match != null && match.groupCount > 0) {
-      jsonString = match.group(1)!.trim();
-    } else {
-      jsonString = text.trim();
-    }
+      final regex = RegExp(r'```(?:json)?\s*([\s\S]*?)```');
+      final match = regex.firstMatch(text);
+      String jsonString;
+      if (match != null && match.groupCount > 0) {
+        jsonString = match.group(1)!.trim();
+      } else {
+        jsonString = text.trim();
+      }
       final parsedJson = json.decode(jsonString);
       return "Improvements: " + parsedJson['improvements'] + "\n Model Answer: " + parsedJson["model_answer"];
     } catch (e) {

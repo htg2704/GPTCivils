@@ -140,11 +140,12 @@ class _DocumentPageState extends State<DocumentPage> {
                       ),
                     ),
                     DottedBorder(
-                      dashPattern: const [6, 3, 6, 3],
-                      borderType: BorderType.RRect,
-                      strokeWidth: 2,
-                      color: AppConstants.secondaryColour,
-                      radius: const Radius.circular(20),
+                      options: RoundedRectDottedBorderOptions(
+                        dashPattern: const [6, 3, 6, 3],
+                        strokeWidth: 2,
+                        color: AppConstants.secondaryColour,
+                        radius: const Radius.circular(20),
+                      ),
                       child: Container(
                         height: 126,
                         decoration: BoxDecoration(
@@ -296,6 +297,7 @@ class _DocumentPageState extends State<DocumentPage> {
                                   .extractText(filePath);
                               var openAi = await OpenAi().searchText(
                                   '${promptController.text} $text', context);
+                              print("openaibhai: $openAi");
                               // var pdfResponse = await OpenAi().pdfGenerationText('${promptController.text} $text', context);
                               DateTime now = DateTime.now();
                               String formattedTimestamp = "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_"
