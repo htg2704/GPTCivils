@@ -11,7 +11,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:image/image.dart' as imglib;
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:pdf_render/pdf_render.dart';
+import 'package:pdfx/pdfx.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
@@ -254,43 +254,50 @@ class PDFService {
     String combinedText = "";
 
     try {
-      // Open PDF document
+      // Open PDF document using pdfx
       final doc = await PdfDocument.openFile(pdfFile.path);
-      final pages = doc.pageCount;
+      final pages = doc.pagesCount;
       List<imglib.Image> images = [];
 
-// get images from all the pages
+      // Get images from all the pages
       for (int i = 1; i <= pages; i++) {
-        var page = await doc.getPage(i);
-        var imgPDF = await page.render();
-        var img = await imgPDF.createImageDetached();
-        var imgBytes = await img.toByteData(format: ImageByteFormat.png);
-        var libImage = imglib.decodeImage(imgBytes!.buffer
-            .asUint8List(imgBytes.offsetInBytes, imgBytes.lengthInBytes));
-        images.add(libImage!);
+        final page = await doc.getPage(i);
+        final pageImage = await page.render(width: page.width, height: page.height);
+        final imgBytes = pageImage?.bytes;
+        if (imgBytes != null) {
+          final libImage = imglib.decodeImage(imgBytes);
+          if (libImage != null) {
+            images.add(libImage);
+          }
+        }
+        await page.close();
       }
 
-// stitch images
+      // Stitch images
       int totalHeight = 0;
-      images.forEach((e) {
+      for (var e in images) {
         totalHeight += e.height;
-      });
+      }
       int totalWidth = 0;
-      images.forEach((element) {
+      for (var element in images) {
         totalWidth = totalWidth < element.width ? element.width : totalWidth;
-      });
+      }
+
+      if (images.isEmpty) {
+        return "";
+      }
+
       final mergedImage = imglib.Image(width: totalWidth, height: totalHeight);
       int mergedHeight = 0;
-      images.forEach((element) {
-        imglib.compositeImage(mergedImage, element,
-            dstX: 0, dstY: mergedHeight);
+      for (var element in images) {
+        imglib.compositeImage(mergedImage, element, dstY: mergedHeight);
         mergedHeight += element.height;
-      });
+      }
 
-// Save image as a file
+      // Save image as a file
       final documentDirectory = await getTemporaryDirectory();
       File imgFile = File('${documentDirectory.path}/pages.png');
-      File(imgFile.path).writeAsBytes(imglib.encodeJpg(mergedImage));
+      await imgFile.writeAsBytes(imglib.encodeJpg(mergedImage));
       combinedText = await _callGoogleVisionAPI(imgFile);
       return combinedText;
     } catch (e) {
@@ -474,6 +481,36 @@ class PDFService {
         },
       ),
     );
+
+    try { // Add this try-catch block
+      final regex = RegExp(r'```(?:json)?\s*([\s\S]*?)```');
+      final match = regex.firstMatch(response);
+
+      String jsonString;
+      if (match != null && match.groupCount > 0) {
+        jsonString = match.group(1)!.trim();
+      } else {
+        jsonString = response.trim();
+      }
+
+      Map<String, dynamic> data = jsonDecode(jsonString);
+
+      // ... (the rest of your pdf generation logic)
+
+    } catch (e) {
+      print("Error parsing JSON for PDF generation: $e");
+      // Optionally, create a PDF with an error message
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Center(
+              child: pw.Text('Failed to generate evaluation matrix due to an error.'),
+            );
+          },
+        ),
+      );
+    }
+
     final outputDir = await getApplicationDocumentsDirectory();
     final file = File('${outputDir.path}/$fileName');
     await file.writeAsBytes(await pdf.save());

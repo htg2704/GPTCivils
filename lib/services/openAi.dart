@@ -32,6 +32,9 @@ class OpenAi {
         Map body_data = jsonDecode(response.body);
         return body_data['choices'][0]['message']['content'] ?? 'Error';
       } else {
+        print('Status Code: ${response.statusCode}');
+        print('Response Body: ${response.body}');
+        print('------------------------');
         return "Error while Processing Request";
       }
     } catch (e) {

@@ -298,6 +298,26 @@ class _DocumentPageState extends State<DocumentPage> {
                               var openAi = await OpenAi().searchText(
                                   '${promptController.text} $text', context);
                               print("openaibhai: $openAi");
+                              if (openAi == 'Error while Processing Request' || openAi == 'Error') {
+                                Navigator.pop(progressContext); // Dismiss the loading dialog
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Evaluation Failed'),
+                                    content: const Text('There was an error processing your document. Please try again.'),
+                                    actions: [
+                                      TextButton(
+                                        child: const Text('OK'),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                return; // Stop further execution
+                              }
+                              print("openaibhai: $openAi");
                               // var pdfResponse = await OpenAi().pdfGenerationText('${promptController.text} $text', context);
                               DateTime now = DateTime.now();
                               String formattedTimestamp = "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_"
