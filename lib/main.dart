@@ -1,13 +1,17 @@
-import 'package:civils_gpt/pages/HomePage.dart';
-import 'package:civils_gpt/pages/LoginPage.dart';
-import 'package:civils_gpt/pages/SplashScreen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:civils_gpt/providers/ConstantsProvider.dart';
+import 'package:civils_gpt/providers/PremiumProvider.dart';
+import 'package:civils_gpt/services/helper.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
+import 'pages/HomePage.dart';
+import 'pages/LoginPage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,20 +19,24 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
   ]);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const SplashWidget());
+
+  final constantsProvider = ConstantsProvider();
+  // No 'await' needed here
+  LoadConstants().loadConstantsFromFirebase(constantsProvider);
+
+  runApp(
+      MultiProvider(
+        providers: [
+          // Use the standard constructor
+          ChangeNotifierProvider(create: (_) => PremiumProvider()),
+          // Use ChangeNotifierProvider.value for existing objects
+          ChangeNotifierProvider.value(value: constantsProvider),
+        ],
+        child: const MyApp(),
+      )
+  );
 }
 
-class SplashWidget extends StatelessWidget {
-  const SplashWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
-    );
-  }
-}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

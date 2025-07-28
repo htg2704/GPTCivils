@@ -19,6 +19,7 @@ import '../providers/PremiumProvider.dart';
 import '../services/SqlQuery.dart';
 import '../services/helper.dart';
 import 'DocumentPage.dart';
+import 'package:civils_gpt/services/search_delegate.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,6 +33,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late final List<Service> _services;
 
   // Color declarations based on your design
   final Color topBarColor = const Color(0xFFE5E7FE); // Pastel purple
@@ -40,6 +42,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   final Color textColor = Colors.black87;
   int? docCount = 0;
   int? todayAnswerStreak = 0;
+
   void getData() async {
     Database database = await SqlQuery().openDb();
     List<DocModel> allDocs = await SqlQuery().getDocs(database);
@@ -95,6 +98,15 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
     _controller.forward();
+
+    _services = [
+      Service(title: "Evaluation", page: const DocumentPage(), icon: Icons.description),
+      Service(title: "Answered", page: const EvaluationPage(), icon: Icons.check_circle),
+      Service(title: "ChatBot", page: const ChatPage(), icon: Icons.chat_bubble),
+      Service(title: "Questions", page: const QuestionsPage(), icon: Icons.question_answer),
+      Service(title: "Notes", page: NotesPage(), icon: Icons.note_add),
+      Service(title: "Premium", page: const ChoosePlans(), icon: Icons.workspace_premium),
+    ];
 
     Future.delayed(const Duration(milliseconds: 30), () {
       LoginHelper().checkPremiumStatus(
@@ -287,7 +299,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                           ),
                         ),
                         onTap: () {
-                          // Handle search tap
+                          showSearch(
+                            context: context,
+                            delegate: CustomSearchDelegate(services: _services),
+                          );
                         },
                       ),
                     ),
@@ -370,7 +385,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               ),
                               _buildStatsCard(
                                 title: "PREMIUM VALIDITY LEFT",
-                                value: context.read<PremiumProvider>().premium  == "NO" ? "NO" : DateFormat('yyyy-MM-dd').format(DateTime.parse(context.read<PremiumProvider>().premium)),
+                                value: _getFormattedPremiumDate(context.read<PremiumProvider>().premium),
                                 icon: Icons.calendar_today,
                               ),
                             ],
@@ -389,7 +404,15 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       ),
     );
   }
-
+  String _getFormattedPremiumDate(String? premium) {
+    if (premium == null || premium == "NO") return "NO";
+    try {
+      final parsedDate = DateTime.parse(premium);
+      return DateFormat('yyyy-MM-dd').format(parsedDate);
+    } catch (e) {
+      return "Not Applicable";
+    }
+  }
   // Service Items in a Grid format (compact horizontal cards)
   Widget _buildServiceItems(BuildContext context) {
     return Padding(
