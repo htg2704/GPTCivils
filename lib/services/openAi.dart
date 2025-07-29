@@ -99,15 +99,21 @@ class OpenAi {
       'stop': ['\n'],
     });
 
-    Response response = await post(url, headers: headers, body: body);
-    if (response.statusCode == 200) {
-      print(response.body);
-      final data = jsonDecode(response.body);
-      final notes = data['choices'][0]['message']['content'];
-      return notes.trim();
-    } else {
-      print(response.body);
-      throw Exception('Failed to generate handwritten notes');
+    try {
+      Response response = await post(url, headers: headers, body: body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Safely access the content and provide a fallback
+        final notes = data['choices']?[0]?['message']?['content'] as String? ?? '';
+        return notes.trim();
+      } else {
+        print(response.body);
+        // Return a user-friendly error message instead of throwing an exception here
+        return 'Error: Failed to generate notes. Status code: ${response.statusCode}';
+      }
+    } catch (e) {
+      print('Error in generateHandwrittenNotes: $e');
+      return 'Error: An exception occurred while generating notes.';
     }
   }
 

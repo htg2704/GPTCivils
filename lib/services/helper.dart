@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../providers/ConstantsProvider.dart';
 import '../providers/PremiumProvider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginHelper {
   void checkPremiumStatus(PremiumProvider premiumProvider) async {
@@ -525,7 +526,37 @@ class LoadConstants {
     constantsProvider.updateConstants(constants);
   }
 }
+class SessionManager {
+  static const String _sessionTokenKey = 'sessionToken';
 
+  // Call this function right after a successful login or sign-up
+  static Future<void> createNewSession(String uid) async {
+    final prefs = await SharedPreferences.getInstance();
+    // Generate a unique token for the new session
+    final newSessionToken = UniqueKey().toString();
+
+    // Store the new token locally on the device
+    await prefs.setString(_sessionTokenKey, newSessionToken);
+
+    // Update the token in Firestore for this user
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'sessionToken': newSessionToken,
+    }, SetOptions(merge: true)); // Use merge to avoid overwriting other data
+  }
+
+  // Helper to get the locally stored token
+  static Future<String?> getLocalSessionToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_sessionTokenKey);
+  }
+
+  // Clear local session data on logout
+  static Future<void> clearSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sessionTokenKey);
+    await FirebaseAuth.instance.signOut();
+  }
+}
 class Helper{
   String parseAnswer(String text){
 
