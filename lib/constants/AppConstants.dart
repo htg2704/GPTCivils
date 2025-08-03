@@ -16,4 +16,5 @@ class AppConstants {
   static Color choosePlanColour = const Color(0xffE6DFF1);
   static Color finePrintsColour = const Color(0xff999999);
   static Color modelColor = const Color(0xffF7F2FA);
+  static Color cardColour = const Color(0xffE8EAED);
 }

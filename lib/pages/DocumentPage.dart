@@ -281,8 +281,8 @@ class _DocumentPageState extends State<DocumentPage> {
                       return FloatingActionButton.extended(
                           backgroundColor: AppConstants.secondaryColour,
                           onPressed: () async {
-                            if (filePath != '' &&
-                                (value.premium != "NO" || value.counter > 0)) {
+                            bool canProceed = value.isPremium || value.freeCounter > 0;
+                            if (filePath != '' && canProceed) {
                               BuildContext progressContext = context;
                               showCupertinoDialog(
                                 context: context,
@@ -349,14 +349,14 @@ class _DocumentPageState extends State<DocumentPage> {
                               });
                               getData();
                               Navigator.of(context).push(MaterialPageRoute(builder: (_)=> const EvaluationPage()));
-                            } else if (!(value.premium != "NO" ||
+                            } else if (!(value.isPremium ||
                                 snapshot.data!.data()!["freeEvaluations"] >
                                     0)) {
                               Navigator.of(context).pop();
                             }
                           },
                           label: Text(
-                            (value.premium != "NO" ||
+                            (value.isPremium ||
                                     snapshot.data!.data()!["freeEvaluations"] >
                                         0)
                                 ? 'Proceed'
@@ -376,18 +376,17 @@ class _DocumentPageState extends State<DocumentPage> {
   }
 
   void updateDatabase() async {
-
+    PremiumProvider premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
     var userId = FirebaseAuth.instance.currentUser!.uid;
-    int counter = await getCounter(userId);
-    if (counter > 0) {
-      counter--;
-      PremiumProvider premiumProvider =
-      Provider.of<PremiumProvider>(context, listen: false);
-      premiumProvider.decrementCounter();
+
+    // Check if the user is not premium and still has free evaluations
+    if (!premiumProvider.isPremium && premiumProvider.freeCounter > 0) {
+      int newCounter = premiumProvider.freeCounter - 1;
+      premiumProvider.setCounter(newCounter); // Update provider state
       await FirebaseFirestore.instance
           .collection("users")
           .doc(userId)
-          .update(<String, dynamic>{"freeEvaluations": counter});
+          .update({"freeEvaluations": newCounter});
     }
   }
 

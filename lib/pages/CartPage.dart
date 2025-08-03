@@ -308,18 +308,36 @@ class CartPageState extends State<CartPage> {
                   (BuildContext context, PremiumProvider value, Widget? child) {
                 return GestureDetector(
                   onTap: () async {
+                    // Show a loading indicator while payment is processing
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Processing payment...')),
+                    );
+
+                    // The doPayment method now handles updating the provider's state
                     bool status = await PaymentHelper().doPayment(
                         (widget.data["price"] - discount),
-                        value,
+                        value, // Pass the provider to the helper
                         widget.data,
                         couponCodeController.text.toUpperCase().trim());
-                    if (status == true) {
-                      value.changePremium(DateTime.now().toString(), widget.data["planID"]);
-                      Future.delayed(const Duration(milliseconds: 500), () {
-                        Navigator.of(context).pop(); // Pop the CartPage
-                      });
+
+                    // Hide the loading indicator
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+                    if (status == true && mounted) {
+                      // On success, just navigate back. The provider is already updated.
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Payment successful! Your plan is active.')),
+                      );
+                      // Pop twice to go back past the "Choose Plans" page
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pop();
                     } else {
-                      couponCodeController.clear();
+                      // Handle payment failure
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Payment failed. Please try again.")),
+                        );
+                      }
                     }
                   },
                   child: Padding(

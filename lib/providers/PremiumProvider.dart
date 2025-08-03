@@ -1,23 +1,38 @@
 import 'package:flutter/material.dart';
 
+enum PremiumState { loading, isPremium, notPremium }
+
 class PremiumProvider extends ChangeNotifier {
-  String premium = "false";
-  int counter = 0;
-  String planID = "-1";
+  PremiumState _state = PremiumState.loading;
+  DateTime? _premiumExpiryDate;
+  int _freeCounter = 0;
+  String _planID = "-1";
+
+  // Getters for easy access in the UI
+  PremiumState get state => _state;
+  bool get isPremium => _state == PremiumState.isPremium;
+  DateTime? get premiumExpiryDate => _premiumExpiryDate;
+  int get freeCounter => _freeCounter;
+  String get planID => _planID;
 
   void setCounter(int count) {
-    counter = count;
+    _freeCounter = count;
     notifyListeners();
   }
 
   void decrementCounter() {
-    counter--;
+    _freeCounter--;
     notifyListeners();
   }
 
-  void changePremium(String status, String planID) {
-    this.premium = status;
-    this.planID = planID;
+  void updatePremiumStatus({
+    required PremiumState newState,
+    DateTime? expiryDate,
+    String? newPlanID,
+  }) {
+    _state = newState;
+    _premiumExpiryDate = expiryDate;
+    _planID = newPlanID ?? "-1";
     notifyListeners();
   }
 }

@@ -1,3 +1,5 @@
+// lib/pages/HomePage.dart
+
 import 'package:civils_gpt/pages/ChatPage.dart';
 import 'package:civils_gpt/pages/ChoosePlans.dart';
 import 'package:civils_gpt/pages/EvaluationPage.dart';
@@ -70,9 +72,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     }
     int tempAnswerStreak = 0;
     allDocs.forEach((doc) {
-        if(checkDateMatch(doc.date)){
-            tempAnswerStreak = tempAnswerStreak + 1;
-        }
+      if(checkDateMatch(doc.date)){
+        tempAnswerStreak = tempAnswerStreak + 1;
+      }
     });
     setState(() {
       docCount = allDocs.length;
@@ -215,7 +217,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "Hi, ${user?.email ?? "Harshwardhan"}",
+                                      "Hi, ${(user?.displayName?.isEmpty ?? true) ? "Aspirant" : user!.displayName}",
                                       style: GoogleFonts.poppins(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w600,
@@ -359,8 +361,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          Wrap(
+                            spacing: 12.0,
+                            runSpacing: 12.0,
+                            alignment: WrapAlignment.center,
                             children: [
                               _buildStatsCard(
                                 title: "ANSWERS WRITTEN",
@@ -372,12 +376,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                 value: todayAnswerStreak.toString(),
                                 icon: Icons.whatshot,
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
                               _buildStatsCard(
                                 title: "PRELIMS TEST ATTEMPTED",
                                 value: "0",
@@ -385,7 +383,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               ),
                               _buildStatsCard(
                                 title: "PREMIUM VALIDITY LEFT",
-                                value: _getFormattedPremiumDate(context.read<PremiumProvider>().premium),
+                                value: _getFormattedPremiumDate(context.read<PremiumProvider>()),
                                 icon: Icons.calendar_today,
                               ),
                             ],
@@ -404,13 +402,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       ),
     );
   }
-  String _getFormattedPremiumDate(String? premium) {
-    if (premium == null || premium == "NO") return "NO";
+  String _getFormattedPremiumDate(PremiumProvider premiumProvider) {
+    if (!premiumProvider.isPremium || premiumProvider.premiumExpiryDate == null) {
+      return "N/A";
+    }
     try {
-      final parsedDate = DateTime.parse(premium);
-      return DateFormat('yyyy-MM-dd').format(parsedDate);
+      return DateFormat('yyyy-MM-dd').format(premiumProvider.premiumExpiryDate!);
     } catch (e) {
-      return "Not Applicable";
+      return "Invalid Date";
     }
   }
   // Service Items in a Grid format (compact horizontal cards)
@@ -535,7 +534,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     required IconData icon,
   }) {
     return Container(
-      width: 160,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: cardColor,

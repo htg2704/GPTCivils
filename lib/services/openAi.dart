@@ -99,15 +99,21 @@ class OpenAi {
       'stop': ['\n'],
     });
 
-    Response response = await post(url, headers: headers, body: body);
-    if (response.statusCode == 200) {
-      print(response.body);
-      final data = jsonDecode(response.body);
-      final notes = data['choices'][0]['message']['content'];
-      return notes.trim();
-    } else {
-      print(response.body);
-      throw Exception('Failed to generate handwritten notes');
+    try {
+      Response response = await post(url, headers: headers, body: body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Safely access the content and provide a fallback
+        final notes = data['choices']?[0]?['message']?['content'] as String? ?? '';
+        return notes.trim();
+      } else {
+        print(response.body);
+        // Return a user-friendly error message instead of throwing an exception here
+        return 'Error: Failed to generate notes. Status code: ${response.statusCode}';
+      }
+    } catch (e) {
+      print('Error in generateHandwrittenNotes: $e');
+      return 'Error: An exception occurred while generating notes.';
     }
   }
 
@@ -147,12 +153,13 @@ class OpenAi {
     return 'Error while fetching result';
   }
 
-  Future<String> generateQuestion(String subject, String topic, BuildContext context) async {
+  Future<String> generateQuestion(String subject, String topic, int marks, BuildContext context) async { // Added marks parameter
     final constants =
         Provider.of<ConstantsProvider>(context, listen: false).values;
     final open_ai_key = constants['openAIKey']!;
+    // Updated prompt to include the marks
     final prompt = 'Generate a UPSC CSE mains question for the subject $subject'
-        '${topic.isNotEmpty ? ' on the topic $topic' : ''}. Make sure the question is relevant with recent pattern of questions in UPSC.';
+        '${topic.isNotEmpty ? ' on the topic $topic' : ''} for $marks marks. Make sure the question is relevant with recent pattern of questions in UPSC.';
 
     try {
       Response response = await post(Uri.parse(constants['openAIBaseUrl']),

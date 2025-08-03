@@ -22,19 +22,36 @@ class _NotesPageState extends State<NotesPage> {
   var fileExtension = '';
 
   Future<void> _generateNotes(BuildContext context) async {
-    if (filePath.isNotEmpty) {
-      setState(() {
-        loading = true;
-      });
+    if (filePath.isEmpty) return;
+
+    setState(() {
+      loading = true;
+      _notes = null; // Clear previous notes
+    });
+
+    try {
       final pdfText = await _pdfService.extractText(filePath);
-      final notes =
-          await _openAIService.generateHandwrittenNotes(pdfText, context);
+      if (pdfText.isEmpty) {
+        throw Exception("Could not extract text from the file.");
+      }
+
+      final generatedNotes =
+      await _openAIService.generateHandwrittenNotes(pdfText, context);
+
       setState(() {
-        _notes = notes;
+        _notes = generatedNotes;
+      });
+    } catch (e) {
+      setState(() {
+        _notes = "An error occurred: ${e.toString()}";
+      });
+    } finally {
+      setState(() {
         loading = false;
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -155,7 +172,7 @@ class _NotesPageState extends State<NotesPage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: SelectableText(
-                          _notes!,
+                          _notes ?? '', // Use the null-aware operator to provide an empty string if _notes is null
                           style: const TextStyle(color: Colors.black),
                         ),
                       ),

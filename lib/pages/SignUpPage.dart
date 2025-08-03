@@ -1,11 +1,17 @@
+// lib/pages/SignUpPage.dart
+
 import 'package:civils_gpt/pages/HomePage.dart';
+import 'package:civils_gpt/pages/LoginPage.dart';
+import 'package:civils_gpt/services/helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:email_validator/email_validator.dart'; // Add email validator package
+import 'package:email_validator/email_validator.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../constants/AppConstants.dart';
+import 'OtpVerificationPage.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -15,260 +21,300 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  final _formKey = GlobalKey<FormState>(); // Form key for validation
+  final _formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final phoneController = TextEditingController();
   var loading = false;
+  var googleLoading = false;
 
-  void signUpWithEmailID(
-      String name,
-      String email,
-      String password,
-      BuildContext context,
-      ) async
-  {
-    setState(() {
-      loading = true;
-    });
-    try {
-      BuildContext tempContext = context;
-
-      showDialog(
-        context: tempContext,
-        builder: (tempContext) {
-         Future.delayed(Duration(seconds: 5), (){
-           Navigator.of(tempContext).pop();
-         });
-          return const AlertDialog(
-              content: Text('Hang On while we signup you up!!')
-          );
-        },
-      );
-      await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: password);
-      User? user = FirebaseAuth.instance.currentUser;
-
-      if (user != null) {
-        await user.updateDisplayName(name);
-        await user.reload();
-        showDialog(
-          context: context,
-          builder: (_context) {
-            return AlertDialog(
-              content: const Text('User created Successfully'),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('OK'),
-                  onPressed: () {
-                    Navigator.of(_context).pop();
-
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
-                  },
-                ),
-              ],
-            );
-
+  void _signUpWithEmail(BuildContext context) async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => loading = true);
+      try {
+        await FirebaseAuth.instance.verifyPhoneNumber(
+          phoneNumber: phoneController.text.trim(),
+          verificationCompleted: (PhoneAuthCredential credential) {},
+          verificationFailed: (FirebaseAuthException e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Phone verification failed: ${e.message}")),
+              );
+            }
           },
+          codeSent: (String verificationId, int? resendToken) {
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => OtpVerificationPage(
+                    verificationId: verificationId,
+                    name: nameController.text.trim(),
+                    email: emailController.text.trim(),
+                    password: passwordController.text.trim(),
+                  ),
+                ),
+              );
+            }
+          },
+          codeAutoRetrievalTimeout: (String verificationId) {},
         );
-      } else {
-
-        Navigator.of(tempContext).pop();
-      }
-      setState(() {
-        loading = false;
-      });
-    } catch (e) {
-      // Show error message in dialog
-      print(e);
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Sign Up Failed'),
-            content: Text(e.toString()), // Display Firebase error message
-            actions: <Widget>[
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("An error occurred: $e")),
           );
-        },
-      );
-      setState(() {
-        loading = false;
-      });
+        }
+      } finally {
+        if (mounted) {
+          setState(() => loading = false);
+        }
+      }
     }
   }
 
+  Future<void> _signUpWithGoogle(BuildContext context) async {
+    setState(() => googleLoading = true);
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        setState(() => googleLoading = false);
+        return; // User cancelled the flow
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      if (userCredential.user != null) {
+        await SessionManager.createNewSession(userCredential.user!.uid);
+
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const HomePage()),
+                  (route) => false);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error signing up with Google: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => googleLoading = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
-    // Clean up the controller when the widget is disposed.
     emailController.dispose();
     passwordController.dispose();
     nameController.dispose();
+    phoneController.dispose();
     super.dispose();
-  }
-
-  // Validation method for sign-up form
-  void _signUp(BuildContext context) {
-    if (_formKey.currentState!.validate()) {
-      signUpWithEmailID(
-        nameController.text,
-        emailController.text,
-        passwordController.text,
-        context,
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          leading: GestureDetector(
-              onTap: () {
-                Navigator.of(context).pop();
-              },
-              child: const Icon(FontAwesomeIcons.arrowLeft, size: 24)),
+      resizeToAvoidBottomInset: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE0F7FA), Color(0xFFFFFFFF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Form(
-            key: _formKey, // Assign form key
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Sign Up',
-                  style: TextStyle(
-                    fontSize: 35,
-                    fontWeight: FontWeight.w700,
-                    color: AppConstants.secondaryColour,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Name Text Field
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(40),
-                    border: Border.all(color: Colors.black, width: 2),
-                  ),
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                  child: TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      icon: Icon(Icons.person),
-                      hintText: 'Name',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your name';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Email Text Field
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(40),
-                    border: Border.all(color: Colors.black, width: 2),
-                  ),
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                  child: TextFormField(
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      icon: Icon(Icons.email),
-                      hintText: 'Email',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      } else if (!EmailValidator.validate(value)) {
-                        return 'Please enter a valid email address';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Password Text Field
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(40),
-                    border: Border.all(color: Colors.black, width: 2),
-                  ),
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                  child: TextFormField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      icon: Icon(Icons.password),
-                      hintText: 'Password',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      } else if (value.length < 6) {
-                        return 'Password must be at least 6 characters long';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(height: 50),
-                // Sign Up Button
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if(loading == false) {
-                        _signUp(context);
-                      }
-                    },
-                    // Call the validation and sign-up method
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(40),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 40),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).pop(),
+                              child: const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Icon(FontAwesomeIcons.arrowLeft, size: 24),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              'Create Account',
+                              style: TextStyle(
+                                fontSize: 35,
+                                fontWeight: FontWeight.w700,
+                                color: AppConstants.secondaryColour,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            _buildTextField(nameController, 'Name', Icons.person),
+                            const SizedBox(height: 20),
+                            _buildTextField(emailController, 'Email', Icons.email, keyboardType: TextInputType.emailAddress),
+                            const SizedBox(height: 20),
+                            _buildTextField(phoneController, 'Phone Number (e.g., +91...)' , Icons.phone, keyboardType: TextInputType.phone),
+                            const SizedBox(height: 20),
+                            _buildTextField(passwordController, 'Password', Icons.lock, obscureText: true),
+                            const SizedBox(height: 30),
+                            ElevatedButton(
+                              onPressed: loading || googleLoading ? null : () => _signUpWithEmail(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(vertical: 15),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(40),
+                                ),
+                                elevation: 5,
+                              ),
+                              child: loading
+                                  ? const CupertinoActivityIndicator(color: Colors.white)
+                                  : const Text(
+                                'Get OTP',
+                                style: TextStyle(fontSize: 20, color: Colors.white),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            _buildOrDivider(),
+                            const SizedBox(height: 20),
+                            ElevatedButton.icon(
+                              onPressed: loading || googleLoading ? null : () => _signUpWithGoogle(context),
+                              icon: googleLoading
+                                  ? Container(
+                                width: 24,
+                                height: 24,
+                                padding: const EdgeInsets.all(2.0),
+                                child: const CircularProgressIndicator(
+                                  color: Colors.black,
+                                  strokeWidth: 3,
+                                ),
+                              )
+                                  : Image.asset('assets/images/google.png', height: 24.0),
+                              label: const Text('Sign Up with Google'),
+                              style: ElevatedButton.styleFrom(
+                                foregroundColor: Colors.black,
+                                backgroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 15),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(40),
+                                  side: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                elevation: 2,
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text('Already have an account? '),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                            const LoginPage()));
+                                  },
+                                  child: const Text(
+                                    'Sign In',
+                                    style: TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    child: loading ? const Center(child: CupertinoActivityIndicator(color: Colors.white,)) : const Text(
-                      'Sign Up',
-                      style: TextStyle(fontSize: 20, color: Colors.white),
-                    ),
                   ),
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
     );
   }
+
+  Widget _buildTextField(TextEditingController controller, String hint, IconData icon,
+      {bool obscureText = false, TextInputType? keyboardType}) {
+    // ... (This function remains the same as before)
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: Colors.grey.shade300, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          icon: Icon(icon, color: Colors.grey.shade600),
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade400),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'This field cannot be empty';
+          }
+          if (hint == 'Email' && !EmailValidator.validate(value)) {
+            return 'Please enter a valid email address';
+          }
+          if (hint == 'Password' && value.length < 6) {
+            return 'Password must be at least 6 characters long';
+          }
+          if (hint.startsWith('Phone') && !value.startsWith('+')) {
+            return 'Please include the country code (e.g., +91)';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildOrDivider() {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: Colors.grey.shade400)),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8.0),
+          child: Text('OR'),
+        ),
+        Expanded(child: Divider(color: Colors.grey.shade400)),
+      ],
+    );
+  }
 }
-
-
