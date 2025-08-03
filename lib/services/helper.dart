@@ -18,46 +18,68 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../providers/ConstantsProvider.dart';
 import '../providers/PremiumProvider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pdf/pdf.dart' hide PdfDocument;
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class LoginHelper {
-  void checkPremiumStatus(PremiumProvider premiumProvider) async {
+  Future<void> checkPremiumStatus(PremiumProvider premiumProvider) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      try {
-        final userDoc = await FirebaseFirestore.instance
-            .collection("users")
-            .doc(user.uid)
-            .get();
-        if (userDoc.data() == null) {
-          FirebaseFirestore.instance.collection("users").doc(user.uid).set(
-              <String, dynamic>{"freeEvaluations": 1, "premiumUser": "NO"});
-        }
-      } catch (e) {
-        FirebaseFirestore.instance
-            .collection("users")
-            .doc(user.uid)
-            .set(<String, dynamic>{"freeEvaluations": 1, "premiumUser": "NO"});
+    if (user == null) {
+      // If there's no user, they are not premium.
+      premiumProvider.updatePremiumStatus(newState: PremiumState.notPremium);
+      return;
+    }
+
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection("users").doc(user.uid).get();
+
+      // If the user document doesn't exist, create it.
+      if (!userDoc.exists) {
+        await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
+          "freeEvaluations": 1,
+          "premiumUser": "NO"
+        });
+        premiumProvider.setCounter(1);
+        premiumProvider.updatePremiumStatus(newState: PremiumState.notPremium);
+        return;
       }
-      final userDoc = await FirebaseFirestore.instance
-          .collection("users")
-          .doc(user.uid)
-          .get();
-      if (userDoc.data()!["premiumUser"] != "NO") {
-        if (DateTime.now().millisecondsSinceEpoch <
-            DateTime.parse(userDoc.data()!["premiumUser"])
-                .millisecondsSinceEpoch) {
-          premiumProvider.changePremium(DateTime.parse(userDoc.data()!["premiumUser"]).toString(), userDoc.data()!["planID"]);
+
+      // --- START OF THE FIX ---
+      final userData = userDoc.data()!;
+      final premiumUserStatus = userData['premiumUser'];
+
+      if (premiumUserStatus != null && premiumUserStatus != "NO") {
+        final expiryDate = DateTime.parse(premiumUserStatus);
+
+        // Check if the premium subscription is still active
+        if (DateTime.now().isBefore(expiryDate)) {
+          // User IS premium
+          premiumProvider.updatePremiumStatus(
+            newState: PremiumState.isPremium,
+            expiryDate: expiryDate,
+            newPlanID: userData['planID'],
+          );
         } else {
-          FirebaseFirestore.instance
+          // Premium has expired. Update Firestore and the provider.
+          await FirebaseFirestore.instance
               .collection("users")
               .doc(user.uid)
-              .update({"premiumUser", "NO"} as Map<Object, Object?>);
+              .update({"premiumUser": "NO"});
+          premiumProvider.updatePremiumStatus(newState: PremiumState.notPremium);
         }
       } else {
-        if (userDoc.data()!["freeEvaluations"] > 0) {
-          premiumProvider.setCounter(userDoc.data()!["freeEvaluations"]);
-        }
+        // User is NOT premium. Set their free counter.
+        premiumProvider.setCounter(userData['freeEvaluations'] ?? 0);
+        premiumProvider.updatePremiumStatus(newState: PremiumState.notPremium);
       }
+      // --- END OF THE FIX ---
+
+    } catch (e) {
+      print("Error checking premium status: $e");
+      // If any error occurs, default to not premium.
+      premiumProvider.updatePremiumStatus(newState: PremiumState.notPremium);
     }
   }
 }
@@ -574,5 +596,92 @@ class Helper{
     } catch (e) {
       return "Error parsing the response";
     }
+  }
+}
+class PDFGenerator {
+  static Future<void> generateUPSCQuestionPaper({
+    required String subject,
+    required String question,
+    required int marks,
+  }) async {
+    final pdf = pw.Document();
+
+    // Using a default font that supports common characters.
+    // For full Unicode support, you would bundle a font like NotoSans.
+    final font = await PdfGoogleFonts.notoSansRegular();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // Header
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                  subject,
+                  style: pw.TextStyle(font: font, fontSize: 16, fontWeight: pw.FontWeight.bold),
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Time Allowed: Three Hours', style: pw.TextStyle(font: font, fontSize: 12)),
+                  pw.Text('Maximum Marks: 250', style: pw.TextStyle(font: font, fontSize: 12)),
+                ],
+              ),
+              pw.SizedBox(height: 10), // Used for margin
+              pw.Divider(thickness: 2),
+              pw.SizedBox(height: 10), // Used for margin
+
+              // Instructions
+              pw.Text(
+                'Question Paper Specific Instructions',
+                style: pw.TextStyle(font: font, fontSize: 12, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.Text(
+                'Please read each of the following instructions carefully before attempting the question:',
+                style: pw.TextStyle(font: font, fontSize: 10),
+              ),
+              pw.SizedBox(height: 15),
+
+              // The Question
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('1. ', style: pw.TextStyle(font: font, fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                  pw.Expanded(
+                    child: pw.Text(
+                      question,
+                      style: pw.TextStyle(font: font, fontSize: 12, height: 1.5), // Correct property is 'height'
+                    ),
+                  ),
+                  pw.SizedBox(width: 20),
+                  pw.Text(
+                    '[$marks]',
+                    style: pw.TextStyle(font: font, fontSize: 12, fontWeight: pw.FontWeight.bold),
+                  ),
+                ],
+              ),
+              pw.Spacer(),
+
+              // Footer
+              pw.Center(
+                child: pw.Text(
+                  'Generated by CivilsGPT',
+                  style: pw.TextStyle(font: font, fontSize: 8, color: PdfColors.grey),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    // Use the printing package to share or save the PDF
+    await Printing.sharePdf(bytes: await pdf.save(), filename: 'UPSC_Mains_Question.pdf');
   }
 }

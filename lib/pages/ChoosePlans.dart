@@ -1,3 +1,5 @@
+// lib/pages/ChoosePlans.dart
+
 import 'package:civils_gpt/pages/CartPage.dart';
 import 'package:civils_gpt/providers/PremiumProvider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,276 +18,201 @@ class ChoosePlans extends StatefulWidget {
 }
 
 class ChoosePlansState extends State<ChoosePlans> {
-  int selectedPlan = -1;
-  Map<String, dynamic> selectedData = {};
+  int selectedPlanIndex = -1;
+  Map<String, dynamic> selectedPlanData = {};
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppConstants.primaryColour,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: AppBar(
-          surfaceTintColor: Colors.transparent,
-          backgroundColor: Colors.transparent,
-          leading: IconButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              icon: const Icon(FontAwesomeIcons.arrowLeft, size: 24)),
-        ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        surfaceTintColor: Colors.transparent,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(FontAwesomeIcons.arrowLeft, size: 24, color: Colors.black87)),
       ),
       body: Consumer<PremiumProvider>(
-        builder: (BuildContext context, PremiumProvider value, Widget? child) {
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      height: 50,
-                      child: Center(
-                        child: Text(
-                          value.premium != "NO" ? "Current Plan" : "Choose Your Plan",
-                          style: GoogleFonts.roboto(
-                              fontSize: 32, fontWeight: FontWeight.w900),
-                        ),
-                      ),
-                    )
-                  ],
+        builder: (BuildContext context, PremiumProvider premiumProvider, Widget? child) {
+
+          // Show a loading indicator while the premium status is being checked
+          if (premiumProvider.state == PremiumState.loading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 24.0),
+                  child: Text(
+                    premiumProvider.isPremium ? "Your Current Plan" : "Choose Your Plan",
+                    style: GoogleFonts.poppins(
+                        fontSize: 32, fontWeight: FontWeight.w900, color: Colors.black87),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: StreamBuilder(
-                    stream: FirebaseFirestore.instance
-                        .collection("plans")
-                        .snapshots(),
-                    builder: (BuildContext context, final data) {
-                      if (data.hasData) {
-                        return ListView.builder(
-                            itemCount: data.data!.size,
-                            itemBuilder: (BuildContext context, int index) {
-                              if ((value.premium != "NO" &&
-                                      data.data!.docs[index].data()['planID'] ==
-                                          value.planID) ||
-                                  !(value.premium != "NO")) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(
-                                      top: 12, bottom: 12),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      if (!(value.premium != "NO")) {
-                                        if (selectedPlan != index) {
-                                          setState(() {
-                                            selectedPlan = index;
-                                            selectedData =
-                                                data.data!.docs[index].data();
-                                          });
-                                        } else if (selectedPlan == index) {
-                                          setState(() {
-                                            selectedPlan = -1;
-                                            selectedData = {};
-                                          });
-                                        }
-                                      }
-                                    },
-                                    child: Stack(
-                                      children: <Widget>[
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                              left: 20, right: 20, top: 12),
-                                          child: Container(
-                                            height: 121,
-                                            decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                                color: AppConstants
-                                                    .choosePlanColour,
-                                                boxShadow: [
-                                                  if (selectedPlan != index)
-                                                    const BoxShadow(
-                                                        color: Color.fromRGBO(
-                                                            0, 0, 0, 0.1),
-                                                        blurRadius: 8,
-                                                        offset: Offset(0, 4))
-                                                ]),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              children: [
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .only(
-                                                                top: 20,
-                                                                left: 20),
-                                                        child: Text(
-                                                          data.data!.docs[index]
-                                                              .data()['title'],
-                                                          style: GoogleFonts
-                                                              .roboto(
-                                                            fontSize: 22,
-                                                            fontWeight:
-                                                                FontWeight.w800,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  top: 10,
-                                                                  left: 20),
-                                                          child: Text(
-                                                            data.data!
-                                                                .docs[index]
-                                                                .data()['sd1'],
-                                                            style: GoogleFonts
-                                                                .roboto(
-                                                              fontSize: 10,
-                                                            ),
-                                                          )),
-                                                      Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  top: 10,
-                                                                  left: 20),
-                                                          child: Text(
-                                                            data.data!
-                                                                .docs[index]
-                                                                .data()['sd2'],
-                                                            style: GoogleFonts
-                                                                .roboto(
-                                                              fontSize: 10,
-                                                            ),
-                                                          ))
-                                                    ],
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: Column(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(top: 5),
-                                                          child: Text(
-                                                            "₹ ${data.data!.docs[index].data()['price'].toString()}",
-                                                            style: GoogleFonts
-                                                                .roboto(
-                                                              fontSize: 20,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w800,
-                                                            ),
-                                                          )),
-                                                      Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(top: 5),
-                                                          child: Text(
-                                                            data.data!
-                                                                    .docs[index]
-                                                                    .data()[
-                                                                'duration'],
-                                                            style: GoogleFonts
-                                                                .roboto(
-                                                              fontSize: 10,
-                                                            ),
-                                                          )),
-                                                    ],
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        if (selectedPlan == index)
-                                          Positioned(
-                                            top: 2,
-                                            right: 6,
-                                            child: Icon(
-                                              Icons.verified,
-                                              size: 32,
-                                              color:
-                                                  AppConstants.uploadTextColour,
-                                            ),
-                                          )
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                return Container();
-                              }
-                            });
-                      } else {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
-                    }),
-              ),
-              if (!(value.premium != "NO"))
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                        padding: const EdgeInsets.only(
-                            top: 12, bottom: 12, left: 20, right: 20),
-                        child: Text(
-                            "Coupons can be applied at the next screen, payment gateway to be selected. Proceed to checkout",
-                            style: TextStyle(
-                                color: AppConstants.finePrintsColour))),
-                    GestureDetector(
-                      onTap: () {
-                        if (selectedPlan != -1) {
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => CartPage(
-                                    data: selectedData,
-                                  )));
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance.collection("plans").snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
                         }
-                      },
-                      child: Padding(
-                          padding: const EdgeInsets.only(
-                              top: 12, bottom: 24, left: 20, right: 20),
-                          child: Container(
-                            height: 70,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(25),
-                                color: AppConstants.secondaryColour),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Select Plan",
-                                  style: GoogleFonts.roboto(
-                                      color: selectedPlan == -1
-                                          ? AppConstants.textBubbleColour
-                                          : Colors.white,
-                                      fontSize: selectedPlan == -1 ? 14 : 16,
-                                      fontWeight: FontWeight.bold),
-                                )
-                              ],
-                            ),
-                          )),
-                    ),
-                  ],
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Center(child: Text("No plans available right now."));
+                        }
+
+                        final allPlans = snapshot.data!.docs;
+                        List<DocumentSnapshot> plansToShow;
+
+                        if (premiumProvider.isPremium) {
+                          // Filter to show only the user's current plan
+                          plansToShow = allPlans.where((doc) {
+                            final plan = doc.data() as Map<String, dynamic>;
+                            return plan['planID'] == premiumProvider.planID;
+                          }).toList();
+                        } else {
+                          plansToShow = allPlans;
+                        }
+
+                        if (plansToShow.isEmpty && premiumProvider.isPremium) {
+                          return const Center(child: Text("Your current plan details could not be loaded."));
+                        }
+
+                        return ListView.builder(
+                            itemCount: plansToShow.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              final plan = plansToShow[index].data() as Map<String, dynamic>;
+                              final bool isSelected = selectedPlanIndex == index;
+
+                              return _buildPlanCard(plan, isSelected, index, !premiumProvider.isPremium);
+                            });
+                      }),
                 ),
-            ],
+                if (!premiumProvider.isPremium) ...[
+                  _buildProceedButton(),
+                ]
+              ],
+            ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildPlanCard(Map<String, dynamic> plan, bool isSelected, int index, bool isSelectable) {
+    return GestureDetector(
+      onTap: isSelectable ? () {
+        setState(() {
+          if (isSelected) {
+            selectedPlanIndex = -1;
+            selectedPlanData = {};
+          } else {
+            selectedPlanIndex = index;
+            selectedPlanData = plan;
+          }
+        });
+      } : null, // Disable tap if the user is already premium
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppConstants.cardColour,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? AppConstants.secondaryColour : Colors.transparent,
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  plan['title'] ?? 'Plan',
+                  style: GoogleFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  "₹${plan['price']?.toString() ?? '0'}",
+                  style: GoogleFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppConstants.secondaryColour,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              plan['sd1'] ?? '',
+              style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              plan['sd2'] ?? '',
+              style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Text(
+                plan['duration'] ?? '',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProceedButton() {
+    bool isPlanSelected = selectedPlanIndex != -1;
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: isPlanSelected
+              ? () {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => CartPage(data: selectedPlanData)));
+          }
+              : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppConstants.secondaryColour,
+            disabledBackgroundColor: Colors.grey.shade300,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: Text(
+            'Proceed to Cart',
+            style: GoogleFonts.poppins(
+                fontSize: 18,
+                color: isPlanSelected ? Colors.white : Colors.grey.shade600,
+                fontWeight: FontWeight.w600),
+          ),
+        ),
       ),
     );
   }

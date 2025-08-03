@@ -153,12 +153,13 @@ class OpenAi {
     return 'Error while fetching result';
   }
 
-  Future<String> generateQuestion(String subject, String topic, BuildContext context) async {
+  Future<String> generateQuestion(String subject, String topic, int marks, BuildContext context) async { // Added marks parameter
     final constants =
         Provider.of<ConstantsProvider>(context, listen: false).values;
     final open_ai_key = constants['openAIKey']!;
+    // Updated prompt to include the marks
     final prompt = 'Generate a UPSC CSE mains question for the subject $subject'
-        '${topic.isNotEmpty ? ' on the topic $topic' : ''}. Make sure the question is relevant with recent pattern of questions in UPSC.';
+        '${topic.isNotEmpty ? ' on the topic $topic' : ''} for $marks marks. Make sure the question is relevant with recent pattern of questions in UPSC.';
 
     try {
       Response response = await post(Uri.parse(constants['openAIBaseUrl']),
